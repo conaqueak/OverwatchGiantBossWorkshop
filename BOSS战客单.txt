@@ -1,0 +1,246 @@
+设置
+{
+	大厅
+	{
+		地图轮换: 完成比赛后
+		比赛结束后转换队伍: 否
+		比赛语音聊天: 启用
+		玩家上限 队伍1: 10
+		玩家上限 队伍2: 2
+		返回大厅: 从不
+		队列中的玩家可以加入: 是
+	}
+
+	模式
+	{
+		团队死斗
+		{
+			主动复生: 关闭
+			双方队伍获胜得分差异: 开启
+			复生时间: 50%
+			游戏模式开始: 即时
+			英雄限制: 关闭
+			重装职责被动生命值加成: 禁用
+			队伍1获胜所需分数: 2
+			队伍2获胜所需分数: 100
+
+			启用地图
+			{
+				地图工坊岛屿 972777519512063901
+			}
+		}
+	}
+}
+
+变量
+{
+	全局:
+		0: GLB_BossExtraHealth
+		1: GLB_BossExtraHealthTimes
+		2: GLB_BossBodySize
+		3: GLB_BossDamageMultiplyDurationS
+		4: GLB_BossDamageMultiplierPerTime
+		5: GLB_CurrentBossDamageMultiplier
+		6: GLB_BossBodyMultiplyDurationS
+		7: GLB_BossBodyMultiplierPerTime
+		8: GLB_CurrentBossBodyMultiplier
+
+	玩家:
+		0: PLR_PAR_A
+}
+
+规则("调整BOSS的初始体型尺寸倍数")
+{
+	事件
+	{
+		持续 - 每名玩家;
+		队伍2;
+		全部;
+	}
+
+	动作
+	{
+		全局.GLB_BossBodySize = 地图工坊设置实数(自定义字符串("分类"), 自定义字符串("BOSS的初始体型尺寸倍数"), 1, 0.100, 20, 0);
+		开始调整玩家大小(事件玩家, 全局.GLB_BossBodySize, 假);
+	}
+}
+
+规则("初始化BOSS额外生命值数据")
+{
+	事件
+	{
+		持续 - 全局;
+	}
+
+	动作
+	{
+		全局.GLB_BossExtraHealth = 地图工坊设置整数(自定义字符串("分类"), 自定义字符串("BOSS额外生命值"), 0, 0, 149985, 0);
+		全局.GLB_BossExtraHealthTimes = 全局.GLB_BossExtraHealth / 9999;
+	}
+}
+
+规则("为BOSS玩家添加额外生命值")
+{
+	事件
+	{
+		持续 - 每名玩家;
+		双方;
+		全部;
+	}
+
+	动作
+	{
+		设置最大生命值(事件玩家, 地图工坊设置整数(自定义字符串("分类"), 自定义字符串("BOSS原始生命值百分比"), 100, 100, 1000, 0));
+		For 玩家变量(事件玩家, PLR_PAR_A, 0, 全局.GLB_BossExtraHealthTimes, 1);
+			为玩家添加生命池(事件玩家, 生命值, 9999, 真, 假);
+		End;
+		根据条件跳过(全局.GLB_BossExtraHealth % 9999 == 0, 1);
+		为玩家添加生命池(事件玩家, 生命值, 全局.GLB_BossExtraHealth % 9999, 真, 假);
+	}
+}
+
+规则("初始化BOSS伤害递增数据")
+{
+	事件
+	{
+		持续 - 全局;
+	}
+
+	动作
+	{
+		全局.GLB_BossDamageMultiplyDurationS = 地图工坊设置实数(自定义字符串("BOSS伤害递增"), 自定义字符串("BOSS伤害每几秒递增一次"), 10, 1, 16200, 0);
+		全局.GLB_BossDamageMultiplierPerTime = 地图工坊设置实数(自定义字符串("BOSS伤害递增"), 自定义字符串("BOSS每次递增的伤害百分比"), 10, 1, 1000, 0);
+	}
+}
+
+规则("调整BOSS玩家伤害")
+{
+	事件
+	{
+		持续 - 全局;
+	}
+
+	条件
+	{
+		游戏正在进行中 == 真;
+	}
+
+	动作
+	{
+		全局.GLB_CurrentBossDamageMultiplier = 100;
+		While(全局.GLB_CurrentBossDamageMultiplier < 1000);
+			等待(全局.GLB_BossDamageMultiplyDurationS, 无视条件);
+			If(全局.GLB_CurrentBossDamageMultiplier + 全局.GLB_BossDamageMultiplierPerTime > 1000);
+				全局.GLB_CurrentBossDamageMultiplier = 1000;
+			Else;
+				全局.GLB_CurrentBossDamageMultiplier += 全局.GLB_BossDamageMultiplierPerTime;
+			End;
+			设置造成伤害(所有玩家(队伍2), 全局.GLB_CurrentBossDamageMultiplier);
+		End;
+	}
+}
+
+规则("初始化BOSS体型尺寸递增数据")
+{
+	事件
+	{
+		持续 - 全局;
+	}
+
+	动作
+	{
+		全局.GLB_BossBodyMultiplyDurationS = 地图工坊设置实数(自定义字符串("BOSS的体型尺寸递增"), 自定义字符串("BOSS的体型尺寸每几秒递增一次"), 10, 1, 16200, 0);
+		全局.GLB_BossBodyMultiplierPerTime = 地图工坊设置实数(自定义字符串("BOSS的体型尺寸递增"), 自定义字符串("BOSS每次递增的体型尺寸倍数"), 1, 0.100, 19.900, 0);
+	}
+}
+
+规则("调整BOSS体型尺寸")
+{
+	事件
+	{
+		持续 - 全局;
+	}
+
+	条件
+	{
+		游戏正在进行中 == 真;
+	}
+
+	动作
+	{
+		全局.GLB_CurrentBossBodyMultiplier = 全局.GLB_BossBodySize;
+		While(全局.GLB_CurrentBossBodyMultiplier < 20);
+			等待(全局.GLB_BossBodyMultiplyDurationS, 无视条件);
+			If(全局.GLB_CurrentBossBodyMultiplier + 全局.GLB_BossBodyMultiplierPerTime > 20);
+				全局.GLB_CurrentBossBodyMultiplier = 20;
+			Else;
+				全局.GLB_CurrentBossBodyMultiplier += 全局.GLB_BossBodyMultiplierPerTime;
+			End;
+			开始调整玩家大小(所有玩家(队伍2), 全局.GLB_CurrentBossBodyMultiplier, 假);
+		End;
+	}
+}
+
+规则("调整比赛最大持续时间")
+{
+	事件
+	{
+		持续 - 全局;
+	}
+
+	条件
+	{
+		游戏正在进行中 == 真;
+	}
+
+	动作
+	{
+		设置比赛时间(地图工坊设置整数(自定义字符串("分类"), 自定义字符串("比赛最大持续时间秒数"), 180, 60, 16200, 0));
+	}
+}
+
+规则("BOSS阵营造成击杀或人类阵营玩家自鲨")
+{
+	事件
+	{
+		玩家阵亡;
+		队伍1;
+		全部;
+	}
+
+	条件
+	{
+		(所在队伍(攻击方) == 队伍2 || 所在队伍(攻击方) != 队伍2) == 真;
+	}
+
+	动作
+	{
+		修改队伍分数(队伍2, 1);
+	}
+}
+
+规则("关闭模式默认行为")
+{
+	事件
+	{
+		持续 - 全局;
+	}
+
+	动作
+	{
+		关闭游戏预设计分模式;
+	}
+}
+
+规则("创建界面")
+{
+	事件
+	{
+		持续 - 全局;
+	}
+
+	动作
+	{
+		创建HUD文本(所有玩家(所有队伍), 空, 空, 空, 右边, 0.100, 颜色(白色), 颜色(红色), 颜色(白色), 可见和字符串, 始终不可见);
+	}
+}
