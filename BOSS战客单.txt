@@ -15,6 +15,14 @@
 	{
 		团队死斗
 		{
+			启用地图
+			{
+				地图工坊岛屿 972777519512063901
+			}
+		}
+
+		综合
+		{
 			主动复生: 关闭
 			双方队伍获胜得分差异: 开启
 			复生时间: 50%
@@ -23,12 +31,16 @@
 			重装职责被动生命值加成: 禁用
 			队伍1获胜所需分数: 2
 			队伍2获胜所需分数: 100
-
-			启用地图
-			{
-				地图工坊岛屿 972777519512063901
-			}
 		}
+	}
+
+	地图工坊
+	{
+		BOSS伤害每几秒递增一次: 10.000
+		BOSS每次递增的伤害百分比: 1000.000
+		BOSS每次递增的体型尺寸倍数: 1.000
+		BOSS的体型尺寸每几秒递增一次: 16200.000
+		BOSS的初始体型尺寸倍数: 1.000
 	}
 }
 
@@ -37,16 +49,18 @@
 	全局:
 		0: GLB_BossExtraHealth
 		1: GLB_BossExtraHealthTimes
-		2: GLB_BossBodySize
+		2: GLB_BossDefaultBodySize
 		3: GLB_BossDamageMultiplyDurationS
 		4: GLB_BossDamageMultiplierPerTime
-		5: GLB_CurrentBossDamageMultiplier
-		6: GLB_BossBodyMultiplyDurationS
-		7: GLB_BossBodyMultiplierPerTime
-		8: GLB_CurrentBossBodyMultiplier
+		5: GLB_BossBodyMultiplyDurationS
+		6: GLB_BossBodyMultiplierPerTime
 
 	玩家:
 		0: PLR_PAR_A
+		1: PLR_BossCurrentDamageMultiplier
+		2: PLR_BossCurrentBodyMultiplier
+		3: PLR_DoomfistSecondFireTriggered
+		4: PLR_DoomfistSecondFireCounter
 }
 
 规则("调整BOSS的初始体型尺寸倍数")
@@ -60,8 +74,8 @@
 
 	动作
 	{
-		全局.GLB_BossBodySize = 地图工坊设置实数(自定义字符串("分类"), 自定义字符串("BOSS的初始体型尺寸倍数"), 1, 0.100, 20, 0);
-		开始调整玩家大小(事件玩家, 全局.GLB_BossBodySize, 假);
+		全局.GLB_BossDefaultBodySize = 地图工坊设置实数(自定义字符串("分类"), 自定义字符串("BOSS的初始体型尺寸倍数"), 1, 0.100, 20, 0);
+		开始调整玩家大小(事件玩家, 全局.GLB_BossDefaultBodySize, 假);
 	}
 }
 
@@ -84,7 +98,7 @@
 	事件
 	{
 		持续 - 每名玩家;
-		双方;
+		队伍2;
 		全部;
 	}
 
@@ -117,25 +131,28 @@
 {
 	事件
 	{
-		持续 - 全局;
+		持续 - 每名玩家;
+		队伍2;
+		全部;
 	}
 
 	条件
 	{
 		游戏正在进行中 == 真;
+		已重生(事件玩家) == 真;
 	}
 
 	动作
 	{
-		全局.GLB_CurrentBossDamageMultiplier = 100;
-		While(全局.GLB_CurrentBossDamageMultiplier < 1000);
+		事件玩家.PLR_BossCurrentDamageMultiplier = 100;
+		While(事件玩家.PLR_BossCurrentDamageMultiplier < 1000);
 			等待(全局.GLB_BossDamageMultiplyDurationS, 无视条件);
-			If(全局.GLB_CurrentBossDamageMultiplier + 全局.GLB_BossDamageMultiplierPerTime > 1000);
-				全局.GLB_CurrentBossDamageMultiplier = 1000;
+			If(事件玩家.PLR_BossCurrentDamageMultiplier + 全局.GLB_BossDamageMultiplierPerTime > 1000);
+				事件玩家.PLR_BossCurrentDamageMultiplier = 1000;
 			Else;
-				全局.GLB_CurrentBossDamageMultiplier += 全局.GLB_BossDamageMultiplierPerTime;
+				事件玩家.PLR_BossCurrentDamageMultiplier += 全局.GLB_BossDamageMultiplierPerTime;
 			End;
-			设置造成伤害(所有玩家(队伍2), 全局.GLB_CurrentBossDamageMultiplier);
+			设置造成伤害(所有玩家(队伍2), 事件玩家.PLR_BossCurrentDamageMultiplier);
 		End;
 	}
 }
@@ -158,25 +175,28 @@
 {
 	事件
 	{
-		持续 - 全局;
+		持续 - 每名玩家;
+		队伍2;
+		全部;
 	}
 
 	条件
 	{
 		游戏正在进行中 == 真;
+		已重生(事件玩家) == 真;
 	}
 
 	动作
 	{
-		全局.GLB_CurrentBossBodyMultiplier = 全局.GLB_BossBodySize;
-		While(全局.GLB_CurrentBossBodyMultiplier < 20);
+		事件玩家.PLR_BossCurrentBodyMultiplier = 全局.GLB_BossDefaultBodySize;
+		While(事件玩家.PLR_BossCurrentBodyMultiplier < 20);
 			等待(全局.GLB_BossBodyMultiplyDurationS, 无视条件);
-			If(全局.GLB_CurrentBossBodyMultiplier + 全局.GLB_BossBodyMultiplierPerTime > 20);
-				全局.GLB_CurrentBossBodyMultiplier = 20;
+			If(事件玩家.PLR_BossCurrentBodyMultiplier + 全局.GLB_BossBodyMultiplierPerTime > 20);
+				事件玩家.PLR_BossCurrentBodyMultiplier = 20;
 			Else;
-				全局.GLB_CurrentBossBodyMultiplier += 全局.GLB_BossBodyMultiplierPerTime;
+				事件玩家.PLR_BossCurrentBodyMultiplier += 全局.GLB_BossBodyMultiplierPerTime;
 			End;
-			开始调整玩家大小(所有玩家(队伍2), 全局.GLB_CurrentBossBodyMultiplier, 假);
+			开始调整玩家大小(所有玩家(队伍2), 事件玩家.PLR_BossCurrentBodyMultiplier, 假);
 		End;
 	}
 }
@@ -242,5 +262,138 @@
 	动作
 	{
 		创建HUD文本(所有玩家(所有队伍), 空, 空, 空, 右边, 0.100, 颜色(白色), 颜色(红色), 颜色(白色), 可见和字符串, 始终不可见);
+	}
+}
+
+规则("人类奥丽莎右键击退增加")
+{
+	事件
+	{
+		持续 - 每名玩家;
+		队伍1;
+		奥丽莎;
+	}
+
+	条件
+	{
+		正在使用辅助武器(事件玩家) == 真;
+	}
+
+	动作
+	{
+		设置造成的击退(事件玩家, 1000);
+		等待直到 (正在使用辅助武器(事件玩家) == 假, 10);
+		等待(0.500, 无视条件);
+		设置造成的击退(事件玩家, 100);
+	}
+}
+
+规则("人类奥丽莎右键击倒实现")
+{
+	事件
+	{
+		玩家造成伤害;
+		队伍1;
+		奥丽莎;
+	}
+
+	条件
+	{
+		事件技能 == 按钮(辅助攻击模式);
+	}
+
+	动作
+	{
+		设置状态(被攻击方, 事件玩家, 击倒, 1);
+	}
+}
+
+规则("人类路霸钩子冻结实现")
+{
+	事件
+	{
+		玩家造成伤害;
+		队伍1;
+		路霸;
+	}
+
+	条件
+	{
+		事件技能 == 按钮(技能1);
+	}
+
+	动作
+	{
+		设置状态(被攻击方, 事件玩家, 冰冻, 3);
+	}
+}
+
+规则("人类卡西迪闪光弹击倒实现")
+{
+	事件
+	{
+		玩家造成伤害;
+		队伍1;
+		卡西迪;
+	}
+
+	条件
+	{
+		事件技能 == 按钮(技能2);
+	}
+
+	动作
+	{
+		设置状态(被攻击方, 事件玩家, 击倒, 1);
+	}
+}
+
+规则("人类温斯顿大跳击倒实现")
+{
+	事件
+	{
+		玩家造成伤害;
+		队伍1;
+		温斯顿;
+	}
+
+	条件
+	{
+		事件技能 == 按钮(技能1);
+	}
+
+	动作
+	{
+		设置状态(被攻击方, 事件玩家, 击倒, 1);
+	}
+}
+
+规则("人类铁拳十三连拳实现")
+{
+	事件
+	{
+		玩家造成伤害;
+		队伍1;
+		末日铁拳;
+	}
+
+	条件
+	{
+		事件玩家.PLR_DoomfistSecondFireTriggered == 假;
+		事件技能 == 按钮(辅助攻击模式);
+	}
+
+	动作
+	{
+		事件玩家.PLR_DoomfistSecondFireTriggered = 真;
+		事件玩家.PLR_DoomfistSecondFireCounter = 0;
+		For 玩家变量(事件玩家, PLR_DoomfistSecondFireCounter, 0, 13, 1);
+			设置技能冷却(事件玩家, 按钮(辅助攻击模式), 0);
+			按下按键(事件玩家, 按钮(辅助攻击模式));
+			根据条件跳过(存活(事件玩家) == 真, 1);
+			中断;
+			等待(0.300, 无视条件);
+		End;
+		事件玩家.PLR_DoomfistSecondFireTriggered = 假;
 	}
 }
